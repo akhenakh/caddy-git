@@ -127,6 +127,11 @@ func parse(c *caddy.Controller) (Git, error) {
 					return nil, c.ArgErr()
 				}
 				repo.Branch = c.Val()
+			case "auth_token":
+				if !c.NextArg() {
+					return nil, c.ArgErr()
+				}
+				repo.Token = c.Val()
 			case "interval":
 				if !c.NextArg() {
 					return nil, c.ArgErr()

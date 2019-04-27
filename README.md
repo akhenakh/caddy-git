@@ -32,19 +32,17 @@ git [repo path] {
 	path        path
 	branch      branch
 	interval    interval
-	clone_args  args
-	pull_args   args
 	hook        path secret
 	hook_type   type
 	then        command [args...]
 	then_long   command [args...]
-  token       github_token
+  auth_token   github_token
 }
 ```
 * **repo** is the URL to the repository; SSH and HTTPS URLs are supported.
 * **path** is the path to clone the repository into; default is site root. It can be absolute or relative (to site root).
 * **branch** is the branch or tag to pull; default is master branch. **`{latest}`** is a placeholder for latest tag which ensures the most recent tag is always pulled.
-* **token** is a token use for authentication; only required for private repositories.
+* **auth_token** is a token use for authentication; only required for private repositories.
 * **interval** is the number of seconds between pulls; default is 3600 (1 hour), minimum 5. An interval of -1 disables periodic pull.
 * **clone_args** is the additional cli args to pass to `git clone` e.g. `--depth=1`. `git clone` is called when the source is being fetched the first time.
 * **pull_args** is the additional cli args to pass to `git pull` e.g. `-s recursive -X theirs`. `git pull` is used when the source is being updated.
@@ -93,7 +91,7 @@ git {
 	branch   v1.0
 	path     subfolder
 	interval 86400
-  token bda561bbff29769ae
+  auth_token bda561bbff29769ae
 }
 ```
 
@@ -109,7 +107,7 @@ git github.com/user/site {
 Part of a Caddyfile for a PHP site that gets changes from a private repo:
 ```
 git git@github.com:user/myphpsite {
-  token bda561bbff29769ae
+  auth_token bda561bbff29769ae
 }
 fastcgi / 127.0.0.1:9000 php
 ```
