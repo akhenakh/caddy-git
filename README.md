@@ -1,4 +1,6 @@
-# git
+## Fork
+
+This is a fork of [caddy-git](https://github.com/abiosoft/caddy-git) to support authentication with tokens, and removed `sh` dependencies.
 
 Middleware for [Caddy](https://caddyserver.com).
 
@@ -10,9 +12,6 @@ If a pull fails, the service will retry up to three times. If the pull was not s
 
 **Requirements:** This directive requires [minigit](https://github.com/akhenakh/minigit) to be installed as `git` in the PATH.
 
-## Fork
-
-This is a fork of [caddy-git](https://github.com/abiosoft/caddy-git) to support authentication with tokens, and removed `sh` dependencies.
 
 ## Syntax
 
