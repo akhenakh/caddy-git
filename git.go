@@ -8,7 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/abiosoft/caddy-git/gitos"
 	"github.com/mholt/caddy"
 )
 
@@ -63,7 +62,7 @@ type Repo struct {
 	Path       string        // Directory to pull to
 	Host       string        // Git domain host e.g. github.com
 	Branch     string        // Git branch
-	KeyPath    string        // Path to private ssh key
+	Token      string        // Authentication token
 	Interval   time.Duration // Interval between pulls
 	CloneArgs  []string      // Additonal cli args to pass to git clone
 	PullArgs   []string      // Additonal cli args to pass to git pull
@@ -125,6 +124,9 @@ func (r *Repo) pull() error {
 		return r.checkoutLatestTag()
 	}
 
+	if r.Token != "" {
+		r.PullArgs = append(r.PullArgs, "--ghtoken", r.Token)
+	}
 	params := append([]string{"pull"}, append(r.PullArgs, "origin", r.Branch)...)
 	var err error
 	if err = r.gitCmd(params, r.Path); err == nil {
@@ -138,6 +140,9 @@ func (r *Repo) pull() error {
 
 // clone performs git clone.
 func (r *Repo) clone() error {
+	if r.Token != "" {
+		r.CloneArgs = append(r.CloneArgs, "--ghtoken", r.Token)
+	}
 	params := append([]string{"clone", "-b", r.Branch}, append(r.CloneArgs, r.URL.Val(), r.Path)...)
 
 	tagMode := r.Branch == latestTag
@@ -197,41 +202,7 @@ func (r *Repo) checkoutCommit(commitHash string) error {
 
 // gitCmd performs a git command.
 func (r *Repo) gitCmd(params []string, dir string) error {
-	// if key is specified, use ssh key
-	if r.KeyPath != "" {
-		return r.gitCmdWithKey(params, dir)
-	}
 	return runCmd(gitBinary, params, dir)
-}
-
-// gitCmdWithKey is used for private repositories and requires an ssh key.
-// Note: currently only limited to Linux and OSX.
-func (r *Repo) gitCmdWithKey(params []string, dir string) error {
-	var gitSSH, script gitos.File
-	// ensure temporary files deleted after usage
-	defer func() {
-		if gitSSH != nil {
-			gos.Remove(gitSSH.Name())
-		}
-		if script != nil {
-			gos.Remove(script.Name())
-		}
-	}()
-
-	var err error
-	// write git.sh script to temp file
-	gitSSH, err = writeScriptFile(gitWrapperScript())
-	if err != nil {
-		return err
-	}
-
-	// write git bash script to file
-	script, err = writeScriptFile(bashScript(gitSSH.Name(), r, params))
-	if err != nil {
-		return err
-	}
-
-	return runCmd(script.Name(), nil, dir)
 }
 
 // Prepare prepares for a git pull

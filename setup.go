@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/url"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -128,11 +127,6 @@ func parse(c *caddy.Controller) (Git, error) {
 					return nil, c.ArgErr()
 				}
 				repo.Branch = c.Val()
-			case "key":
-				if !c.NextArg() {
-					return nil, c.ArgErr()
-				}
-				repo.KeyPath = c.Val()
 			case "interval":
 				if !c.NextArg() {
 					return nil, c.ArgErr()
@@ -188,22 +182,11 @@ func parse(c *caddy.Controller) (Git, error) {
 			return nil, c.ArgErr()
 		}
 		// validate repo url
-		if repoURL, err := parseURL(string(repo.URL), repo.KeyPath != ""); err != nil {
+		if repoURL, err := parseURL(string(repo.URL)); err != nil {
 			return nil, err
 		} else {
 			repo.URL = RepoURL(repoURL.String())
 			repo.Host = repoURL.Hostname()
-		}
-
-		// if private key is not specified, convert repository URL to https
-		// to avoid ssh authentication
-		// else validate git URL
-		// Note: private key support not yet available on Windows
-		if repo.KeyPath != "" {
-			// TODO add Windows support for private repos
-			if runtime.GOOS == "windows" {
-				return nil, fmt.Errorf("ssh authentication not yet supported on Windows")
-			}
 		}
 
 		// validate git requirements
@@ -224,7 +207,7 @@ func parse(c *caddy.Controller) (Git, error) {
 }
 
 // parseURL validates if repoUrl is a valid git url.
-func parseURL(repoURL string, private bool) (*url.URL, error) {
+func parseURL(repoURL string) (*url.URL, error) {
 	// scheme
 	urlParts := strings.Split(repoURL, "://")
 	switch {
@@ -234,11 +217,7 @@ func parseURL(repoURL string, private bool) (*url.URL, error) {
 	case len(urlParts) > 1:
 		return nil, fmt.Errorf("Invalid url scheme %s. If url contains port, scheme is required", urlParts[0])
 	default:
-		if private {
-			repoURL = "ssh://" + repoURL
-		} else {
-			repoURL = "https://" + repoURL
-		}
+		repoURL = "https://" + repoURL
 	}
 
 	u, err := url.Parse(repoURL)
