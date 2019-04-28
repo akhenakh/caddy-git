@@ -19,7 +19,7 @@ const (
 )
 
 func init() {
-	caddy.RegisterPlugin("git", caddy.Plugin{
+	caddy.RegisterPlugin("puregit", caddy.Plugin{
 		ServerType: "http",
 		Action:     setup,
 	})
@@ -188,11 +188,6 @@ func parse(c *caddy.Controller) (Git, error) {
 		} else {
 			repo.URL = RepoURL(repoURL.String())
 			repo.Host = repoURL.Hostname()
-		}
-
-		// validate git requirements
-		if err := Init(); err != nil {
-			return nil, err
 		}
 
 		// prepare repo for use

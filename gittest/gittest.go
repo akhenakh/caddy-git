@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/abiosoft/caddy-git/gitos"
+	"github.com/akhenakh/caddy-git/gitos"
 )
 
 // FakeOS implements a mock gitos.OS, gitos.Cmd and gitos.File.

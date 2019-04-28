@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/abiosoft/caddy-git/gittest"
+	"github.com/akhenakh/caddy-git/gittest"
 	"github.com/mholt/caddy"
 )
 
