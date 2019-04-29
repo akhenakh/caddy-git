@@ -48,10 +48,7 @@ func setup(c *caddy.Controller) error {
 
 			hookRepos = append(hookRepos, repo)
 
-			startupFuncs = append(startupFuncs, func() error {
-				return repo.Pull()
-			})
-
+			startupFuncs = append(startupFuncs, repo.Pull)
 		} else {
 			startupFuncs = append(startupFuncs, func() error {
 
@@ -196,7 +193,6 @@ func parse(c *caddy.Controller) (Git, error) {
 		}
 
 		git = append(git, repo)
-
 	}
 
 	return git, nil
