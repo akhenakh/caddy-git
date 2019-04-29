@@ -8,7 +8,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/mholt/caddy"
+	"gopkg.in/src-d/go-git.v4"
+	"gopkg.in/src-d/go-git.v4/plumbing"
+	"gopkg.in/src-d/go-git.v4/plumbing/transport/http"
 )
 
 const (
@@ -64,8 +66,6 @@ type Repo struct {
 	Branch     string        // Git branch
 	Token      string        // Authentication token
 	Interval   time.Duration // Interval between pulls
-	CloneArgs  []string      // Additonal cli args to pass to git clone
-	PullArgs   []string      // Additonal cli args to pass to git pull
 	Then       []Then        // Commands to execute after successful git pull
 	pulled     bool          // true if there was a successful pull
 	lastPull   time.Time     // time of the last successful pull
@@ -113,96 +113,107 @@ func (r *Repo) Pull() error {
 
 // pull performs git pull, or git clone if repository does not exist.
 func (r *Repo) pull() error {
-
 	// if not pulled, perform clone
 	if !r.pulled {
 		return r.clone()
 	}
 
-	// if latest tag config is set
-	if r.Branch == latestTag {
-		return r.checkoutLatestTag()
+	gr, err := git.PlainOpen(r.Path)
+	if err != nil {
+		return err
 	}
 
+	w, err := gr.Worktree()
+	if err != nil {
+		return err
+	}
+
+	var auth *http.BasicAuth
 	if r.Token != "" {
-		r.PullArgs = append(r.PullArgs, "--ghtoken", r.Token)
+		auth = &http.BasicAuth{
+			Username: "minigit", // anything except an empty string
+			Password: r.Token,
+		}
 	}
-	params := append([]string{"pull"}, append(r.PullArgs, "origin", r.Branch)...)
-	var err error
-	if err = r.gitCmd(params, r.Path); err == nil {
-		r.pulled = true
-		r.lastPull = time.Now()
-		Logger().Printf("%v pulled.\n", r.URL)
-		r.lastCommit, err = r.mostRecentCommit()
+	err = w.Pull(&git.PullOptions{
+		Auth:          auth,
+		RemoteName:    "origin",
+		ReferenceName: plumbing.ReferenceName("refs/heads/" + r.Branch),
+	})
+	if err != git.NoErrAlreadyUpToDate {
+		return err
 	}
-	return err
+	ref, err := gr.Head()
+	if err != nil {
+		return err
+	}
+	commit, err := gr.CommitObject(ref.Hash())
+	if err != nil {
+		return err
+	}
+
+	r.pulled = true
+	r.lastPull = time.Now()
+	Logger().Printf("%v pulled.\n", r.URL)
+	r.lastCommit = commit.String()
+
+	return nil
 }
 
 // clone performs git clone.
 func (r *Repo) clone() error {
+	var auth *http.BasicAuth
+
 	if r.Token != "" {
-		r.CloneArgs = append(r.CloneArgs, "--ghtoken", r.Token)
-	}
-	params := append([]string{"clone", "-b", r.Branch}, append(r.CloneArgs, r.URL.Val(), r.Path)...)
-
-	tagMode := r.Branch == latestTag
-	if tagMode {
-		params = append([]string{"clone"}, append(r.CloneArgs, r.URL.Val(), r.Path)...)
-	}
-
-	var err error
-	if err = r.gitCmd(params, ""); err == nil {
-		r.pulled = true
-		r.lastPull = time.Now()
-		Logger().Printf("%v pulled.\n", r.URL)
-		r.lastCommit, err = r.mostRecentCommit()
-
-		// if latest tag config is set.
-		if tagMode {
-			return r.checkoutLatestTag()
+		auth = &http.BasicAuth{
+			Username: "minigit", // anything except an empty string
+			Password: r.Token,
 		}
 	}
 
-	return err
-}
-
-// checkoutLatestTag checks out the latest tag of the repository.
-func (r *Repo) checkoutLatestTag() error {
-	tag, err := r.fetchLatestTag()
+	gr, err := git.PlainClone(r.Path, false, &git.CloneOptions{
+		URL:               r.URL.Val(),
+		Auth:              auth,
+		ReferenceName:     plumbing.ReferenceName("refs/heads/" + r.Branch),
+		RecurseSubmodules: git.DefaultSubmoduleRecursionDepth,
+	})
 	if err != nil {
-		Logger().Println("Error retrieving latest tag.")
 		return err
 	}
-	if tag == "" {
-		Logger().Println("No tags found for Repo: ", r.URL)
-		return fmt.Errorf("No tags found for Repo: %v", r.URL)
-	} else if tag == r.latestTag {
-		Logger().Println("No new tags.")
-		return nil
+
+	ref, err := gr.Head()
+	if err != nil {
+		return err
 	}
 
-	params := []string{"checkout", "tags/" + tag}
-	if err = r.gitCmd(params, r.Path); err == nil {
-		r.latestTag = tag
-		r.lastCommit, err = r.mostRecentCommit()
-		Logger().Printf("Tag %v checkout done.\n", tag)
+	commit, err := gr.CommitObject(ref.Hash())
+	if err != nil {
+		return err
 	}
-	return err
+
+	r.pulled = true
+	r.lastPull = time.Now()
+	Logger().Printf("%v pulled.\n", r.URL)
+	r.lastCommit = commit.String()
+
+	return nil
 }
 
 // checkoutCommit checks out the specified commitHash.
 func (r *Repo) checkoutCommit(commitHash string) error {
-	var err error
-	params := []string{"checkout", commitHash}
-	if err = r.gitCmd(params, r.Path); err == nil {
-		Logger().Printf("Commit %v checkout done.\n", commitHash)
+	gr, err := git.PlainOpen(r.Path)
+	if err != nil {
+		return err
 	}
-	return err
-}
 
-// gitCmd performs a git command.
-func (r *Repo) gitCmd(params []string, dir string) error {
-	return runCmd(gitBinary, params, dir)
+	w, err := gr.Worktree()
+	if err != nil {
+		return err
+	}
+
+	return w.Checkout(&git.CheckoutOptions{
+		Hash: plumbing.NewHash(commitHash),
+	})
 }
 
 // Prepare prepares for a git pull
@@ -241,42 +252,18 @@ func (r *Repo) Prepare() error {
 	return fmt.Errorf("cannot git clone into %v, directory not empty", r.Path)
 }
 
-// getMostRecentCommit gets the hash of the most recent commit to the
-// repository. Useful for checking if changes occur.
-func (r *Repo) mostRecentCommit() (string, error) {
-	command := gitBinary + ` --no-pager log -n 1 --pretty=format:"%H"`
-	c, args, err := caddy.SplitCommandAndArgs(command)
-	if err != nil {
-		return "", err
-	}
-	return runCmdOutput(c, args, r.Path)
-}
-
-// fetchLatestTag retrieves the most recent tag in the repository.
-func (r *Repo) fetchLatestTag() (string, error) {
-	// fetch updates to get latest tag
-	params := []string{"fetch", "origin", "--tags"}
-	err := r.gitCmd(params, r.Path)
-	if err != nil {
-		return "", err
-	}
-	// retrieve latest tag
-	command := gitBinary + ` describe origin --abbrev=0 --tags`
-	c, args, err := caddy.SplitCommandAndArgs(command)
-	if err != nil {
-		return "", err
-	}
-	return runCmdOutput(c, args, r.Path)
-}
-
 // originURL retrieves remote origin url for the git repository at path
 func (r *Repo) originURL() (string, error) {
-	_, err := gos.Stat(r.Path)
+	gr, err := git.PlainOpen(r.Path)
 	if err != nil {
 		return "", err
 	}
-	args := []string{"config", "--get", "remote.origin.url"}
-	return runCmdOutput(gitBinary, args, r.Path)
+
+	url, err := gr.Remote("origin")
+	if err != nil {
+		return "", err
+	}
+	return url.String(), err
 }
 
 // execThen executes r.Then.

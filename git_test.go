@@ -21,46 +21,6 @@ func check(t *testing.T, err error) {
 	}
 }
 
-func TestInit(t *testing.T) {
-	err := Init()
-	check(t, err)
-}
-
-func TestHelpers(t *testing.T) {
-	Init()
-	f, err := writeScriptFile([]byte("script"))
-	check(t, err)
-	var b [6]byte
-	_, err = f.Read(b[:])
-	check(t, err)
-	if string(b[:]) != "script" {
-		t.Errorf("Expected script found %v", string(b[:]))
-	}
-
-	out, err := runCmdOutput(gitBinary, []string{"-version"}, "")
-	check(t, err)
-	if out != gittest.CmdOutput {
-		t.Errorf("Expected %v found %v", gittest.CmdOutput, out)
-	}
-
-	err = runCmd(gitBinary, []string{"-version"}, "")
-	check(t, err)
-
-	wScript := gitWrapperScript()
-	if string(wScript) != expectedWrapperScript {
-		t.Errorf("Expected %v found %v", expectedWrapperScript, string(wScript))
-	}
-
-	f, err = writeScriptFile(wScript)
-	check(t, err)
-
-	repo := &Repo{Host: "github.com", KeyPath: "~/.key"}
-	script := string(bashScript(f.Name(), repo, []string{"clone", "git@github.com/repo/user"}))
-	if script != expectedBashScript {
-		t.Errorf("Expected %v found %v", expectedBashScript, script)
-	}
-}
-
 func TestGit(t *testing.T) {
 	// prepare
 	repos := []*Repo{
@@ -116,7 +76,6 @@ Command 'echo Hello' successful.
 		&Repo{Path: "gitdir", URL: "http://github.com:u/repo.git"},
 		&Repo{Path: "gitdir", URL: "https://github.com/user/repo.git", Then: []Then{NewThen("echo", "Hello")}},
 		&Repo{Path: "gitdir"},
-		&Repo{Path: "gitdir", KeyPath: ".key"},
 	}
 
 	gittest.CmdOutput = "git@github.com:u1/repo.git"
@@ -190,9 +149,6 @@ func createRepo(r *Repo) *Repo {
 	if r.Interval != 0 {
 		repo.Interval = r.Interval
 	}
-	if r.KeyPath != "" {
-		repo.KeyPath = r.KeyPath
-	}
 	if r.Path != "" {
 		repo.Path = r.Path
 	}
@@ -205,79 +161,3 @@ func createRepo(r *Repo) *Repo {
 
 	return repo
 }
-
-var expectedBashScript = `#!/usr/bin/env bash
-
-mkdir -p ~/.ssh;
-touch ~/.ssh/known_hosts;
-ssh-keyscan -t rsa,dsa github.com 2>&1 | sort -u - ~/.ssh/known_hosts > ~/.ssh/tmp_hosts;
-cat ~/.ssh/tmp_hosts | while read line
-do
-  grep -q "$line" ~/.ssh/known_hosts || echo $line >> ~/.ssh/known_hosts;
-done
-` + gittest.TempFileName + ` -i ~/.key clone git@github.com/repo/user;
-`
-
-var expectedWrapperScript = `#!/usr/bin/env bash
-
-# The MIT License (MIT)
-# Copyright (c) 2013 Alvin Abad
-
-if [ $# -eq 0 ]; then
-    echo "Git wrapper script that can specify an ssh-key file
-Usage:
-    git.sh -i ssh-key-file git-command
-    "
-    exit 1
-fi
-
-# remove temporary file on exit
-trap 'rm -f /tmp/.git_ssh.$$' 0
-
-if [ "$1" = "-i" ]; then
-    SSH_KEY=$2; shift; shift
-    echo -e "#!/usr/bin/env bash\n \
-    ssh -i $SSH_KEY \$@" > /tmp/.git_ssh.$$
-    chmod +x /tmp/.git_ssh.$$
-    export GIT_SSH=/tmp/.git_ssh.$$
-fi
-
-# in case the git command is repeated
-[ "$1" = "git" ] && shift
-
-# Run the git command
-/usr/bin/git "$@"
-
-`
-
-var expectedWrapperScriptAltTmp = `#!/usr/bin/env bash
-
-# The MIT License (MIT)
-# Copyright (c) 2013 Alvin Abad
-
-if [ $# -eq 0 ]; then
-    echo "Git wrapper script that can specify an ssh-key file
-Usage:
-    git.sh -i ssh-key-file git-command
-    "
-    exit 1
-fi
-
-# remove temporary file on exit
-trap 'rm -f /home/user/tmp/.git_ssh.$$' 0
-
-if [ "$1" = "-i" ]; then
-    SSH_KEY=$2; shift; shift
-    echo -e "#!/usr/bin/env bash\n \
-    ssh -i $SSH_KEY \$@" > /home/user/tmp/.git_ssh.$$
-    chmod +x /home/user/tmp/.git_ssh.$$
-    export GIT_SSH=/home/user/tmp/.git_ssh.$$
-fi
-
-# in case the git command is repeated
-[ "$1" = "git" ] && shift
-
-# Run the git command
-/usr/bin/git "$@"
-
-`

@@ -29,96 +29,72 @@ func TestGitParse(t *testing.T) {
 		expected  *Repo
 	}{
 		{`git git@github.com:user/repo {
-			args --depth 1
-			key ~/.key
 		}`, false, &Repo{
-			URL:       "ssh://git@github.com:user/repo",
-			CloneArgs: []string{"--depth", "1"},
+			URL: "ssh://git@github.com:user/repo",
 		}},
 		{`git user:pass@github.com/user/repo.git {
-			args --depth 1
 		}`, false, &Repo{
-			URL:       "https://user:pass@github.com/user/repo.git",
-			CloneArgs: []string{"--depth", "1"},
+			URL: "https://user:pass@github.com/user/repo.git",
 		}},
 		{`git {
 		repo ssh://git@github.com:user/repo
-		key ~/.key
 		}`, false, &Repo{
-			KeyPath: "~/.key",
-			URL:     "ssh://git@github.com:user/repo",
+			URL: "ssh://git@github.com:user/repo",
 		}},
 		{`git {
 		repo ssh://git@github.com:user/repo.git
-		key ~/.key
 		interval 600
 		}`, false, &Repo{
-			KeyPath:  "~/.key",
 			URL:      "ssh://git@github.com:user/repo.git",
 			Interval: time.Second * 600,
 		}},
 		{`git {
-		key ~/.key
 		}`, true, nil},
 		{`git {
 		repo ssh://git@github.com:user/repo
-		key ~/.key
 		then echo hello world
 		}`, false, &Repo{
-			KeyPath: "~/.key",
-			URL:     "ssh://git@github.com:user/repo",
-			Then:    []Then{NewThen("echo", "hello world")},
+			URL:  "ssh://git@github.com:user/repo",
+			Then: []Then{NewThen("echo", "hello world")},
 		}},
 		{`git https://user@bitbucket.org/user/repo.git`, false, &Repo{
 			URL: "https://user@bitbucket.org/user/repo.git",
 		}},
 		{`git ssh://git@bitbucket.org:user/repo.git {
-			key ~/.key
 		}`, false, &Repo{
-			KeyPath: "~/.key",
-			URL:     "ssh://git@bitbucket.org:user/repo.git",
+			URL: "ssh://git@bitbucket.org:user/repo.git",
 		}},
 		{`git ssh://git@bitbucket.org:user/repo.git {
-			key ~/.key
 		}`, false, &Repo{
-			KeyPath: "~/.key",
-			URL:     "ssh://git@bitbucket.org:user/repo.git",
+			URL: "ssh://git@bitbucket.org:user/repo.git",
 		}},
 		{`git ssh://git@bitbucket.org:2222/user/repo.git {
-			key ~/.key
 		}`, false, &Repo{
-			KeyPath: "~/.key",
-			URL:     "ssh://git@bitbucket.org:2222/user/repo.git",
+			URL: "ssh://git@bitbucket.org:2222/user/repo.git",
 		}},
 		{`git ssh://git@bitbucket.org:2222/user/repo.git {
-			key ~/.key
 			hook_type gogs
 		}`, false, &Repo{
-			KeyPath: "~/.key",
-			URL:     "ssh://git@bitbucket.org:2222/user/repo.git",
+			URL: "ssh://git@bitbucket.org:2222/user/repo.git",
 			Hook: HookConfig{
 				Type: "gogs",
 			},
 		}},
 		{`git ssh://git@bitbucket.org:2222/user/repo.git {
-			key ~/.key
 			hook /webhook
 			hook_type gogs
 		}`, false, &Repo{
-			KeyPath: "~/.key",
-			URL:     "ssh://git@bitbucket.org:2222/user/repo.git",
+			URL: "ssh://git@bitbucket.org:2222/user/repo.git",
 			Hook: HookConfig{
 				URL:  "/webhook",
 				Type: "gogs",
 			},
 		}},
 		{`git ssh://git@bitbucket.org:2222/user/repo.git {
-			key ~/.key
 			hook /webhook some-secrets
 			hook_type gogs
 		}`, false, &Repo{
-			KeyPath: "~/.key",
-			URL:     "ssh://git@bitbucket.org:2222/user/repo.git",
+			URL: "ssh://git@bitbucket.org:2222/user/repo.git",
 			Hook: HookConfig{
 				URL:    "/webhook",
 				Secret: "some-secrets",
@@ -228,9 +204,6 @@ func reposEqual(expected, repo *Repo) bool {
 	if expected.Interval != 0 && expected.Interval != repo.Interval {
 		return false
 	}
-	if expected.KeyPath != "" && expected.KeyPath != repo.KeyPath {
-		return false
-	}
 	if expected.Path != "" && expected.Path != repo.Path {
 		return false
 	}
@@ -241,9 +214,6 @@ func reposEqual(expected, repo *Repo) bool {
 		return false
 	}
 	if fmt.Sprint(expected.Hook) != fmt.Sprint(repo.Hook) {
-		return false
-	}
-	if fmt.Sprint(expected.CloneArgs) != fmt.Sprint(repo.CloneArgs) {
 		return false
 	}
 	return true
