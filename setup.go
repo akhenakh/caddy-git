@@ -45,13 +45,10 @@ func setup(c *caddy.Controller) error {
 		// If a HookUrl is set, we switch to event based pulling.
 		// Install the url handler
 		if repo.Hook.URL != "" {
-
 			hookRepos = append(hookRepos, repo)
-
 			startupFuncs = append(startupFuncs, repo.Pull)
 		} else {
 			startupFuncs = append(startupFuncs, func() error {
-
 				// Start service routine in background
 				Start(repo)
 
@@ -207,7 +204,7 @@ func parseURL(repoURL string) (*url.URL, error) {
 	case strings.HasPrefix(repoURL, "http://"):
 	case strings.HasPrefix(repoURL, "ssh://"):
 	case len(urlParts) > 1:
-		return nil, fmt.Errorf("Invalid url scheme %s. If url contains port, scheme is required", urlParts[0])
+		return nil, fmt.Errorf("invalid url scheme %s. If url contains port, scheme is required", urlParts[0])
 	default:
 		repoURL = "https://" + repoURL
 	}

@@ -3,7 +3,7 @@ package git
 import (
 	"sync"
 
-	"github.com/akhenakh/caddy-git/gitos"
+	"github.com/akhenakh/caddy-puregit/gitos"
 )
 
 var (

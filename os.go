@@ -1,6 +1,6 @@
 package git
 
-import "github.com/akhenakh/caddy-git/gitos"
+import "github.com/akhenakh/caddy-puregit/gitos"
 
 // gos is the OS used by git.
 var gos gitos.OS = gitos.GitOS{}

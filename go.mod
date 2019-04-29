@@ -1,4 +1,4 @@
-module github.com/akhenakh/caddy-git
+module github.com/akhenakh/caddy-puregit
 
 go 1.12
 

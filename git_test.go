@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/akhenakh/caddy-git/gittest"
+	"github.com/akhenakh/caddy-puregit/gittest"
 )
 
 // init sets the OS used to fakeOS.
