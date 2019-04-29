@@ -1,6 +1,6 @@
 ## Fork
 
-This is a fork of [caddy-git](https://github.com/abiosoft/caddy-git) to support authentication with tokens, and removed `sh` dependencies.
+This is a fork of [caddy-git](https://github.com/abiosoft/caddy-git) with a pure Go git to support authentication with tokens, and removed `sh` dependencies.
 
 Middleware for [Caddy](https://caddyserver.com).
 
@@ -9,9 +9,6 @@ git clones a git repository into the site. This makes it possible to deploy your
 The git directive starts a service routine that runs during the lifetime of the server. When the service starts, it clones the repository. While the server is still up, it pulls the latest every so often. You can also set up a webhook to pull immediately after a push. In regular git fashion, a pull only includes changes, so it is very efficient.
 
 If a pull fails, the service will retry up to three times. If the pull was not successful by then, it won't try again until the next interval.
-
-**Requirements:** This directive requires [minigit](https://github.com/akhenakh/minigit) to be installed as `git` in the PATH.
-
 
 ## Syntax
 
@@ -88,7 +85,7 @@ git {
 	branch   v1.0
 	path     subfolder
 	interval 86400
-  auth_token bda561bbff29769ae
+	auth_token bda561bbff29769ae
 }
 ```
 
