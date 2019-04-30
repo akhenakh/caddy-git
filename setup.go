@@ -23,6 +23,7 @@ func init() {
 		ServerType: "http",
 		Action:     setup,
 	})
+	httpserver.RegisterDevDirective("puregit", "git")
 }
 
 // setup configures a new Git service routine.
