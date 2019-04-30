@@ -23,7 +23,7 @@ This simplified syntax pulls from master every 3600 seconds (1 hour) and only wo
 For more control or to use a private repository, use the following syntax:
 
 ```
-git [repo path] {
+puegit [repo path] {
 	repo        repo
 	path        path
 	branch      branch
@@ -32,7 +32,7 @@ git [repo path] {
 	hook_type   type
 	then        command [args...]
 	then_long   command [args...]
-  auth_token   github_token
+  	auth_token   github_token
 }
 ```
 * **repo** is the URL to the repository; SSH and HTTPS URLs are supported.
@@ -70,17 +70,17 @@ Note that because the hook URL is used as an API endpoint, you shouldn't have an
 
 Public repository pulled into site root every hour:
 ```
-git github.com/user/myproject
+puegit github.com/user/myproject
 ```
 
 Public repository pulled into the "subfolder" directory in the site root:
 ```
-git github.com/user/myproject subfolder
+puegit github.com/user/myproject subfolder
 ```
 
 Private repository pulled into the "subfolder" directory with tag v1.0 once per day:
 ```
-git {
+puegit {
 	repo     git@github.com:user/myproject
 	branch   v1.0
 	path     subfolder
@@ -92,7 +92,7 @@ git {
 <a name="then-example"></a>
 Generate a static site with [Hugo](http://gohugo.io) after each pull:
 ```
-git github.com/user/site {
+puegit github.com/user/site {
 	path  ../
 	then  hugo --destination=/home/user/hugosite/public
 }
@@ -100,7 +100,7 @@ git github.com/user/site {
 
 Part of a Caddyfile for a PHP site that gets changes from a private repo:
 ```
-git git@github.com:user/myphpsite {
+puegit git@github.com:user/myphpsite {
   auth_token bda561bbff29769ae
 }
 fastcgi / 127.0.0.1:9000 php
@@ -108,7 +108,7 @@ fastcgi / 127.0.0.1:9000 php
 
 Specifying a webhook:
 ```
-git git@github.com:user/site {
+puegit git@github.com:user/site {
 	hook /webhook secret-password
 }
 ```
