@@ -2,6 +2,8 @@
 
 This is a fork of [caddy-git](https://github.com/abiosoft/caddy-git) with a pure Go git to support authentication with tokens, and removed `sh` dependencies.
 
+See https://blog.nobugware.com/post/2019/deploying-a-website-with-caddy-git-and-kubernetes/ for explenations.
+
 Middleware for [Caddy](https://caddyserver.com).
 
 git clones a git repository into the site. This makes it possible to deploy your site with a simple git push.
@@ -13,7 +15,7 @@ If a pull fails, the service will retry up to three times. If the pull was not s
 ## Syntax
 
 ```
-git repo [path]
+puregit repo [path]
 ```
 * **repo** is the URL to the repository; SSH and HTTPS URLs are supported
 * **path** is the path, relative to site root, to clone the repository into; default is site root
@@ -23,7 +25,7 @@ This simplified syntax pulls from master every 3600 seconds (1 hour) and only wo
 For more control or to use a private repository, use the following syntax:
 
 ```
-puegit [repo path] {
+puregit [repo path] {
 	repo        repo
 	path        path
 	branch      branch
@@ -70,17 +72,17 @@ Note that because the hook URL is used as an API endpoint, you shouldn't have an
 
 Public repository pulled into site root every hour:
 ```
-puegit github.com/user/myproject
+puregit github.com/user/myproject
 ```
 
 Public repository pulled into the "subfolder" directory in the site root:
 ```
-puegit github.com/user/myproject subfolder
+puregit github.com/user/myproject subfolder
 ```
 
 Private repository pulled into the "subfolder" directory with tag v1.0 once per day:
 ```
-puegit {
+puregit {
 	repo     git@github.com:user/myproject
 	branch   v1.0
 	path     subfolder
@@ -92,7 +94,7 @@ puegit {
 <a name="then-example"></a>
 Generate a static site with [Hugo](http://gohugo.io) after each pull:
 ```
-puegit github.com/user/site {
+puregit github.com/user/site {
 	path  ../
 	then  hugo --destination=/home/user/hugosite/public
 }
@@ -100,7 +102,7 @@ puegit github.com/user/site {
 
 Part of a Caddyfile for a PHP site that gets changes from a private repo:
 ```
-puegit git@github.com:user/myphpsite {
+puregit git@github.com:user/myphpsite {
   auth_token bda561bbff29769ae
 }
 fastcgi / 127.0.0.1:9000 php
@@ -108,7 +110,7 @@ fastcgi / 127.0.0.1:9000 php
 
 Specifying a webhook:
 ```
-puegit git@github.com:user/site {
+puregit git@github.com:user/site {
 	hook /webhook secret-password
 }
 ```
