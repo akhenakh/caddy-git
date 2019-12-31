@@ -1,6 +1,6 @@
 ## Fork
 
-This is a fork of [caddy-git](https://github.com/abiosoft/caddy-git) with a pure Go git to support authentication with tokens, and removed `sh` dependencies.
+This is a orginally a fork then a rewrite of [caddy-git](https://github.com/abiosoft/caddy-git) with a pure Go git to support authentication with tokens, and removed `sh` dependencies.
 
 See https://blog.nobugware.com/post/2019/deploying-a-website-with-caddy-git-and-kubernetes/ for explanations.
 
